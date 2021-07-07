@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="app">
+    <table border="1">
+        宠物名称：<input type="text" v-model="fromData.pname"/>
+        <input type="button" value="搜索" @click="queryTable()"/>
+        <input type="button" value="新增" @click="add()"/>
+        <tr v-for="petvo in dataSource.records">
+            <td>{{petvo.id}}</td>
+            <td>{{petvo.pname}}</td>
+            <td>{{petvo.ptypeid}}</td>
+            <td>{{petvo.pmoney}}</td>
+            <td>{{petvo.psex}}</td>
+            <td>{{petvo.page}}</td>
+            <td>{{petvo.tname}}</td>
+            <td @click="edit(petvo)">修改</td>
+            <td @click="del(petvo.id)">删除</td>
+        </tr>
+    </table>
+    {{dataSource.current}}/{{dataSource.pages}}
+    共{{dataSource.total}}条
+    <a @click="up()">上一页</a><a @click="next()">下一页</a>
+    <select v-model="fromData.pageSize" @change="loadTable()">
+        <option value="2">2条/页</option>
+        <option value="3">3条/页</option>
+        <option value="4">4条/页</option>
+    </select>
+    <div>
+        <form v-if="send">
+            宠物名称:<input type="text" v-model="param.pname"><br/>
+            宠物类型:
+            <select v-model="param.ptypeid">
+                <option value="0" selected>请选择</option>
+                <option v-bind:value="ptype.tid" v-for="ptype in dataPtype">{{ptype.tname}}</option>
+            </select>
+            <br/>
+            价格:<input type="text" v-model="param.pmoney"><br/>
+            宠物性别:<input type="text" v-model="param.psex"><br/>
+            宠物年龄:<input type="text" v-model="param.page"><br/>
+            <input type="button" value="提交" @click="sub()">
+            <input type="button" value="关闭" @click="close()">
+        </form>
+    </div>
+</div>
+</body>
+<script>
+    new Vue({
+        el:"#app",
+        data:{
+            send:false,
+            dataSource:[],
+            dataPtype:[],
+            //查询条件需要的数据
+            fromData:{
+                pname:"",
+                pageNo:1,
+                pageSize:3,
+            },
+            //新增或修改表单的数据
+            param:{
+            },
+            url:{
+                listPtype:"listPtype",
+                list:"findPetVo",
+                add:"add",
+                edit:"upd",
+                del:"del",
+            }
+        },
+        mounted:function(){
+            this.loadTable()
+            this.loadTablePtype();
+        },
+        methods:{
+            loadTable(){
+                var that=this;
+                axios
+                    .get(this.url.list,{params:this.fromData})
+                    .then(function (res) {
+                        that.dataSource=res.data.result;
+                    })
+            },
+
+            loadTablePtype(){
+                var that=this;
+                axios
+                    .get(this.url.listPtype)
+                    .then(function (res) {
+                        that.dataPtype=res.data.result;
+                    })
+            },
+            add(){
+                this.edit({});
+            },
+            edit(Pet){
+                this.send=true;
+                this.fromData={},
+                this.param={},
+                this.param.id=Pet.id;
+                this.param.pname=Pet.pname;
+                this.param.ptypeid=Pet.ptypeid;
+                this.param.pmoney=Pet.pmoney;
+                this.param.psex=Pet.psex;
+                this.param.page=Pet.page;
+            },
+            close(){
+                this.send=false;
+            },
+            sub(){
+                /*表单填了值之后,也就是param有值了
+                * */
+                var that=this;
+                var obj;
+                if(this.param.id){
+                    obj=axios.post(this.url.edit,this.param);
+                }else{
+                    obj=axios.post(this.url.add,this.param);
+                }
+                obj.then(function (res) {
+                    if(res.data.success){
+                        that.close();
+                        that.loadTable();
+                    }
+                    alert(res.data.message)
+                })
+            },
+            del(id){
+                var that=this;
+                axios
+                    .get(this.url.del+"/"+id)
+                    .then(function (res) {
+                        if(res.data.success){
+                            that.loadTable();
+                        }
+                        alert(res.data.message)
+                    })
+            },
+            queryTable(){
+                this.loadTable();
+            },
+
+            //点击上一页
+            up() {
+                if (this.dataSource.current <= 1) {
+                    alert("已经是第一页");
+                    return;
+                }
+                this.fromData.pageNo = this.dataSource.current - 1;
+                this.loadTable();
+            },
+            next() {
+                if (this.dataSource.current >= this.dataSource.pages) {
+                    alert("已经是最后一页");
+                    return;
+                }
+                this.fromData.pageNo = this.dataSource.current + 1;
+                this.loadTable();
+            },
+
+        }
+
+    })
+</script>
+</html>

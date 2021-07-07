@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.kt.plus.mapper.IPetMapper">
+    <sql id="sqlPetVo">
+        id,pname,ptypeid,pmoney,psex,page,tid,tname
+    </sql>
+    <select id="findPetVo" resultType="com.kt.plus.vo.PetVo">
+        SELECT
+        <include refid="sqlPetVo"/>
+        FROM pet LEFT JOIN ptype ON pet.ptypeid=ptype.tid
+        <where>
+            <if test="petVo.pname!=null and petVo.pname!=''">AND pet.pname LIKE CONCAT('%',#{petVo.pname},'%')</if>
+        </where>
+    </select>
+</mapper>
